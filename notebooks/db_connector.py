@@ -1,6 +1,10 @@
+import os
 import pyodbc
 import pandas as pd
 from typing import Optional
+from dotenv import load_dotenv
+ 
+load_dotenv()
 
 
 class AdventureWorksDB:
@@ -14,28 +18,34 @@ class AdventureWorksDB:
         print(df.head())
     """
 
-    def __init__(
-        self,
-        server: str = "localhost",
-        database: str = "AdventureWorks2022",
-        driver: str = "ODBC Driver 17 for SQL Server",
-    ):
+    def __init__(self):
         """
-        Initialize the connector with connection parameters.
-
-        Args:
-            server:   SQL Server instance name (default: localhost)
-            database: Database name (default: AdventureWorks2022)
-            driver:   ODBC driver name installed on your machine
+         Initialize the connector using environment variables from .env:
+            DB_SERVER  — SQL Server instance
+            DB_NAME    — Database name 
+            DB_DRIVER  — ODBC driver 
         """
-        self.server = server
-        self.database = database
-        self.driver = driver
+        self.server   = os.getenv("DB_SERVER")
+        self.database = os.getenv("DB_NAME")
+        self.driver   = os.getenv("DB_DRIVER")
+        self.slackbot_username = os.getenv("SLACKBOT_USERNAME")
+        self.slackbot_password = os.getenv("SLACKBOT_PASSWORD")
+ 
+        if not all([self.server, self.database, self.driver,self.slackbot_username, self.slackbot_password]):
+            raise EnvironmentError(
+                "Missing one or more required environment variables: "
+                "DB_SERVER, DB_NAME, DB_DRIVER, slackbot_username, slackbot_password "
+                "Check your .env file."
+            )
+        
         self.connection_string = (
             f"DRIVER={{{self.driver}}};"
             f"SERVER={self.server};"
             f"DATABASE={self.database};"
+            f"UID={self.slackbot_username};"
+            f"PWD={self.slackbot_password};"
             "Trusted_Connection=yes;"  # Uses Windows Authentication
+            "TrustServerCertificate=yes;"
         )
 
     def query(self, sql: str, params: Optional[tuple] = None) -> pd.DataFrame:
